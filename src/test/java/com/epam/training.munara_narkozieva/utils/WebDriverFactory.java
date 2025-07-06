@@ -4,36 +4,40 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.edge.EdgeDriver;
-import org.openqa.selenium.edge.EdgeOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class WebDriverFactory {
 
-    private static final ThreadLocal<WebDriver> driverThreadLocal = new ThreadLocal<>();
+    private static final Logger logger = LoggerFactory.getLogger(WebDriverFactory.class);
+    private static final ThreadLocal<WebDriver> driverThread = new ThreadLocal<>();
 
     public static WebDriver getDriver(String browser) {
-        if (driverThreadLocal.get() == null) {
+        if (driverThread.get() == null) {
+            logger.info("Starting WebDriver for browser: {}", browser);
+
             switch (browser.toLowerCase()) {
-                case "chrome":
-                    WebDriverManager.chromedriver().setup();
-                    driverThreadLocal.set(new ChromeDriver());
-                    break;
                 case "edge":
                     WebDriverManager.edgedriver().setup();
-                    EdgeOptions options = new EdgeOptions();
-                    driverThreadLocal.set(new EdgeDriver(options));
+                    driverThread.set(new EdgeDriver());
                     break;
+                case "chrome":
                 default:
-                    throw new IllegalArgumentException("Unsupported browser: " + browser);
+                    logger.warn("Unknown browser '{}', defaulting to Chrome", browser);
+                    WebDriverManager.chromedriver().setup();
+                    driverThread.set(new ChromeDriver());
+                    break;
             }
         }
-        return driverThreadLocal.get();
+        return driverThread.get();
     }
 
     public static void quitDriver() {
-        WebDriver driver = driverThreadLocal.get();
+        WebDriver driver = driverThread.get();
         if (driver != null) {
+            logger.info("Quitting WebDriver");
             driver.quit();
-            driverThreadLocal.remove();
+            driverThread.remove();
         }
     }
 }

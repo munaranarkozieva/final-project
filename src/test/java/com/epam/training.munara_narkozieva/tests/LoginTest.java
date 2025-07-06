@@ -1,95 +1,83 @@
 package com.epam.training.munara_narkozieva.tests;
 
 import com.epam.training.munara_narkozieva.pages.LoginPage;
- import com.epam.training.munara_narkozieva.utils.WebDriverFactory;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.TestInstance;
+import com.epam.training.munara_narkozieva.utils.WebDriverFactory;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.openqa.selenium.WebDriver;
 
 import java.time.Duration;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LoginTest {
 
     private WebDriver driver;
     private LoginPage loginPage;
-    private final String browser = System.getProperty("browser", "chrome"); // Default to chrome
 
+    @AfterEach
+    void tearDown() {
+        WebDriverFactory.quitDriver();
+    }
 
-    void setUp(String browser) {
+    void initDriver(String browser) {
         driver = WebDriverFactory.getDriver(browser);
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
         driver.get("https://www.saucedemo.com/");
         loginPage = new LoginPage(driver);
     }
 
-    void tearDown() {
-        WebDriverFactory.quitDriver();
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"chrome", "edge"}) // Runs on both browsers
+    @ParameterizedTest(name = "UC-1: Empty Credentials on {0}")
+    @ValueSource(strings = {"chrome", "edge"})
     void testEmptyCredentials(String browser) {
-        setUp(browser);
+        initDriver(browser);
 
-        loginPage.enterUsername("foo");
-        loginPage.enterPassword("bar");
+        loginPage.enterUsername("temp");
+        loginPage.enterPassword("temp");
         loginPage.clearUsername();
         loginPage.clearPassword();
 
         driver.navigate().refresh();
-        loginPage = new LoginPage(driver);
 
+        loginPage = new LoginPage(driver);
         loginPage.clickLogin();
 
-        String err = loginPage.getErrorMessage();
-        System.out.println("Error shown: [" + err + "]");
-        Assertions.assertTrue(
-                err.contains("Username is required"),
-                "Expected 'Username is required', but got: " + err
-        );
-
-        tearDown();
+        String error = loginPage.getErrorMessage();
+        assertThat(error, containsString("Username is required"));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "UC-2: Missing Password on {0}")
     @ValueSource(strings = {"chrome", "edge"})
     void testMissingPassword(String browser) {
-        setUp(browser);
+        initDriver(browser);
 
-        loginPage.enterPassword("bar");
+        loginPage.enterUsername("standard_user");
+        loginPage.enterPassword("temp_pass");
         loginPage.clearPassword();
 
         driver.navigate().refresh();
+
         loginPage = new LoginPage(driver);
 
         loginPage.enterUsername("standard_user");
         loginPage.clickLogin();
 
-        String err = loginPage.getErrorMessage();
-        System.out.println("Error shown: [" + err + "]");
-        Assertions.assertTrue(
-                err.contains("Password is required"),
-                "Expected 'Password is required', but got: " + err
-        );
-
-        tearDown();
+        String error = loginPage.getErrorMessage();
+        assertThat(error, containsString("Password is required"));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "UC-3: Valid Login on {0}")
     @ValueSource(strings = {"chrome", "edge"})
     void testSuccessfulLogin(String browser) {
-        setUp(browser);
+        initDriver(browser);
 
         loginPage.enterUsername("standard_user");
         loginPage.enterPassword("secret_sauce");
-
         loginPage.clickLogin();
 
-        Assertions.assertEquals("Swag Labs", driver.getTitle());
-
-        tearDown();
+        assertThat(driver.getTitle(), is("Swag Labs"));
     }
 }

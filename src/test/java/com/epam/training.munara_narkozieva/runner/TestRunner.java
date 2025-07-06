@@ -10,7 +10,7 @@ import static io.cucumber.junit.platform.engine.Constants.PLUGIN_PROPERTY_NAME;
 
 @Suite
 @IncludeEngines("cucumber")
-@SelectClasspathResource("features") // This points to src/test/resources/features
+@SelectClasspathResource("features")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "com.epam.training.munara_narkozieva.steps") // <-- Change this if your step defs are in a different package
 @ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty")
 public class TestRunner {
